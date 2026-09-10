@@ -1,0 +1,72 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+== Motivação ==
+
+Como plataforma para compartilhamento de entrada baseado em software, o OpenFlowKey atualmente requer o uso de monitores conectados localmente. Isso significa que cada membro físico (não virtualizado localmente) da rede OpenFlowKey precisa do espaço de pelo menos um monitor.
+
+Essa limitação pode ser superada por algum método de alternância da entrada fornecida ao monitor. Em geral, isso seria feito manualmente, com um comutador físico de entradas ou pelos controles embutidos do monitor. No entanto, chaves de hardware podem ser desajeitadas e caras, e ter que navegar nos menus do monitor a cada minuto pode ser frustrante.
+
+Para alguns, o VNC seria uma solução aceitável, mas seu desempenho de vídeo, compreensivelmente, deixa muito a desejar. Em vez disso, um método baseado em software para alternar vídeo entre máquinas locais, combinado com o compartilhamento de entrada muito rápido do OpenFlowKey, pode ser usado para criar o que é efetivamente um [https://en.wikipedia.org/wiki/KVM_switch switch KVM] baseado em software.
+
+== Método geral ==
+
+Toda plataforma atualmente suportada pelo OpenFlowKey oferece métodos para ligar e desligar saídas de vídeo sob demanda via linha de comando.
+
+São eles:
+
+* [http://www.x.org/wiki/Projects/XRandR XRandR] para Linux (ou provavelmente qualquer coisa que use X como base para ambiente desktop)
+* [http://en.wikipedia.org/wiki/Pmset Pmset] para OS X
+* [http://www.nirsoft.net/utils/nircmd.html NirCmd] para Windows ('''Não testado''')
+
+Podemos usar essas ferramentas para escrever scripts que agendem adequadamente a alternância das saídas de vídeo entre as máquinas conectadas localmente, de modo a proporcionar a aparência de um switch KVM de hardware. Funcionalidades existentes do SO e do OpenFlowKey podem ser usadas para aprimorar o efeito, com atalhos globalizados para alternar entradas e realocar foco, compartilhamento de área de transferência e transições de mouse perfeitas entre telas.
+
+== Linux e macOS ==
+
+Uso com sucesso o seguinte script com um servidor Linux e cliente Mac OS X. Suspeito que algo similar funcionará com a maioria das configurações, mas não tenho capacidade para testes adicionais no momento.
+
+Este script pode ser visto em ação por volta dos 50 segundos em [http://youtu.be/-PyzHl-kqTk#t=50s este vídeo].
+
+Partes potencialmente relevantes da configuração mostrada são as seguintes:
+
+{| class="wikitable"
+|-
+! SO !! GPU !! Monitores Conectados
+|-
+| Arch Linux || Radeon HD 7700 || Acer V2223W (DFP5) e Acer AL2223W (DFP6)
+|-
+| Mac OS X Lion (10.7.5) || NVIDIA GeForce 9400 || Acer AL2223W (DFP6)
+|}
+
+O Arch é exibido constantemente no DFP5, e alterno entre Arch e OS X no DFP6.
+
+Coloquei o seguinte shell script no servidor Linux. Sinta-se à vontade para melhorá-lo:
+<pre>
+#!/bin/bash
+
+CLIENT_MAC=00:00:00:00:00:00
+CLIENT_IP=192.168.1.XXX # a static IP for the client
+CLIENT_USER=user # we use this to login to the client through ssh
+
+# wake up the client. Only necessary if you want to let it sleep when idle.
+wol $CLIENT_MAC 
+
+TOGGLE=$HOME/.display_toggler
+if [ ! -e $TOGGLE ]; then 
+	touch $TOGGLE
+	xrandr --output DFP5 --off &&
+	ssh -ft $CLIENT_USER@$CLIENT_IP "sudo pmset force -a displaysleep 0"
+else
+	rm $TOGGLE
+	MAGIC_NUMBER=2147483648 # gives pmset a seizure, causing the video output to terminate 
+	xrandr --output DFP5 --auto --right-of DFP6 &&
+	ssh -ft $CLIENT_USER@$CLIENT_IP "sudo pmset force -a displaysleep $MAGIC_NUMBER"
+fi
+
+# the host appears to have lost or gained a monitor, so we need to inform OpenFlowKey of this
+sudo /etc/rc.d/openflowkey restart
+</pre>
+
+Uso o WM no meu host OpenFlowKey para mapear um atalho de teclado para o script toggle_display.sh. O OpenFlowKey está configurado, usando [http://synergy2.sourceforge.net/configuration.html keystrokes], para sempre encaminhar este evento de entrada para o host, de modo que o script no host possa ser disparado de qualquer lugar. Esta configuração também exige que você tenha compartilhado chaves ssh entre servidor e cliente, e que ambos os usuários local e remoto sejam sudoers sem senha ou root, porque <tt>pmset</tt> não funciona sem root.
+
+== Problemas ==
+* Em pelo menos algumas versões do OS X, você precisa [http://mactips.dwhoard.com/mactips/system/wake-on-demand fazer alguns ajustes] se quiser deixá-lo dormir nesta configuração. A opção <tt>darkwake=no</tt> funcionou para mim.

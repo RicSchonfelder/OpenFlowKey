@@ -1,0 +1,19 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+Estes são aplicativos conhecidos por interferir na operação do OpenFlowKey, ou com os quais o OpenFlowKey interfere de alguma forma.
+
+* Photoshop
+* MS Office
+* WizMouse
+* AutoHotKey
+* iTerm2
+* Actual Multiple Monitors
+* Smoothmouse
+* SecureAnywhere
+* Stardock Fences
+* World of Warcraft e outros jogos em tela cheia (movimento do mouse fica descontrolado)
+* Ableton Live (movimento de botões e controles deslizantes da interface nativa está quebrado)
+* GuardedID (um app de prevenção contra keylogging)
+* Adobe Acrobat XI Pro
+* Wiznote
+* Pathfinder

@@ -1,0 +1,5 @@
+[SEE ALSO]
+openflowkey(1), openflowkey-core(1)
+
+All documentation is on the web, so please point your browser at
+<https://github.com/openflowkey/openflowkey/wiki> and surf away.

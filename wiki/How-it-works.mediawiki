@@ -1,0 +1,19 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+OpenFlowKey é razoavelmente bem comentado, então ler o código-fonte deve ser suficiente para entender partes específicas. Veja o arquivo doc/PORTING no código-fonte do openflowkey para mais informações de alto nível.
+
+A teoria por trás do openflowkey é simples: o servidor captura eventos de mouse, teclado, área de transferência e protetor de tela e os encaminha para um ou mais clientes. Se a entrada for direcionada ao próprio servidor, então a entrada é entregue normalmente. Na prática, porém, muitas complicações surgem.
+
+Primeiro, diferentes mapeamentos de teclado podem produzir caracteres diferentes. O OpenFlowKey tenta gerar o mesmo caractere no cliente que teria sido gerado no servidor, incluindo teclas modificadoras apropriadas (como Control e Alt). Teclas não-caractere como Shift também são sintetizadas se possível. Às vezes o cliente simplesmente não consegue criar o caractere ou não tem uma tecla não-caractere correspondente e o openflowkey deve descartar o evento. Note que o openflowkey não necessariamente sintetizará um evento para a tecla correspondente no teclado do cliente. Por exemplo, se o cliente ou servidor não consegue distinguir entre as teclas shift esquerda e direita, então o openflowkey não pode ter certeza de sintetizar o shift no mesmo lado do teclado que o usuário pressionou.
+
+Segundo, diferentes sistemas têm diferentes áreas de transferência e formatos de área de transferência. O sistema X window tem uma seleção e área de transferência em todo o sistema (e ainda outros buffers) enquanto o Microsoft Windows tem apenas uma área de transferência em todo o sistema. O OpenFlowKey tem que escolher quais desses buffers correspondem entre si. Além disso, diferentes sistemas usam diferentes codificações de texto e quebras de linha. O OpenFlowKey media e converte entre elas.
+
+Finalmente, não há padrões entre sistemas operacionais para algumas operações que o openflowkey requer. Entre estas estão: interceptar e sintetizar eventos; habilitar, desabilitar, iniciar e parar o protetor de tela; detectar quando o protetor de tela inicia; ler e escrever a(s) área(s) de transferência.
+
+Tudo isso significa que o openflowkey deve ser customizado para cada sistema operacional (ou sistema de janelas no caso do X windows). O OpenFlowKey divide as diferenças de plataforma em dois grupos. O primeiro inclui as coisas mundanas dependentes de plataforma: coisas de sistema de arquivos, multithreading, I/O de rede, conversão de caracteres multi-byte e wide, tempo e suspensão, exibição de mensagens e logging, e executar um processo desanexado de um terminal. Este código vive em lib/arch.
+
+O segundo inclui tratamento de gerenciamento de tela e janela, tratamento de eventos do usuário, síntese de eventos, as áreas de transferência e o protetor de tela. Este código vive em lib/platform.
+
+Para ambos os grupos, existem classes ou interfaces particulares que devem ser herdadas e implementadas para cada plataforma. Veja o arquivo doc/PORTING no código-fonte do openflowkey para mais informações.
+
+O OpenFlowKey pode gerar documentação automaticamente a partir dos comentários no código usando doxygen. Use make doxygen para compilá-la você mesmo a partir do código-fonte no diretório doc/doxygen/html.

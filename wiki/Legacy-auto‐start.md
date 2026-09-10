@@ -1,0 +1,313 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+# Windows
+
+The official way is to use the Windows service feature in 1.4 which works with Windows Vista/7. This is now the default behavior upon installation. To have Synergy ''not'' start on boot, you need to edit the properties of the service and set it to Manual.
+
+# Mac
+
+These instructions are not recommended for most people; instead, simply add the Synergy app to your startup items and enable auto-start in settings.
+
+## Running Synergy on MacOS via plist
+
+Here we create a shell script and a property list file (plist), and activate the plist using the launchctl command-line tool.
+
+The shell script runs the synergyc Unix executable, telling it to connect to a laboratory workstation.
+
+## Make the shell script
+
+First make a little bash script or whatever to contain your synergy calls..
+
+For example, I put mine in <code>~/.scripts/synergyscript.sh</code>
+
+Here's what my script looks like:
+<pre>
+#!/bin/bash
+
+## Synergy client, connecting to Lab workstation
+/Applications/Synergy.app/Contents/MacOS/synergyc -f -d FATAL -n Intrepid 192.168.1.102
+</pre>
+
+Here I'm telling the synergy client I'm running to announce my machine's name is ''Intrepid'' and I'm getting to to connect to the ip ''192.168.1.102''.
+
+I used this format so that I might later add additional separate instances of synergy, as this was on a laptop that moves around.
+
+Then make sure you make your script executable: <pre>chmod +x ~/.scripts/synergyscript.sh</pre>
+
+''does it need to be made executable?  we don't need that to run it manually.  Does launchctl or the plist require it?''
+
+Run the script manually to confirm it works: <pre>~/.scripts/synergyscript.sh</pre>
+
+If it works, you should see '''[please describe that here]'''.  If it doesn't work, you might see '''[please describe]'''.  In that case, try '''[please describe]'''.  
+
+## Create the corresponding plist file
+I created my plist file under <tt>~/Library/LaunchAgents/ca.dawning.scripts.osx.synergy.plist</tt>
+
+It contains:
+<pre>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>ca.dawning.scripts.osx.synergy</string>
+    <key>Program</key>
+    <string>/Users/j/.scripts/synergyscript.sh</string>
+    <key>KeepAlive</key>
+    <true/>
+  </dict>
+</plist>
+</pre>
+
+## Activate your plist with launchctl
+<pre>
+launchctl load ~/Library/LaunchAgents/ca.dawning.scripts.osx.synergy.plist
+</pre>
+
+To unload it, just swap that ''load'' above with ''unload''.
+
+Using a Mac OS X 10.6.8 server with synergys 1.4.12 and a Windows 7 SP1 client with synergyc.exe 1.4.12
+
+## OS X Server
+Create a config file ~/Library/Synergy/synergy.conf (or where ever) with the following contents:
+```
+section: screens
+	win:
+		alt = super
+		super = alt
+		halfDuplexCapsLock = false
+		halfDuplexNumLock = false
+		halfDuplexScrollLock = false
+		xtestIsXineramaUnaware = false
+		switchCorners = none +top-right +bottom-right 
+		switchCornerSize = 0
+	osx:
+		halfDuplexCapsLock = false
+		halfDuplexNumLock = false
+		halfDuplexScrollLock = false
+		xtestIsXineramaUnaware = false
+		switchCorners = none 
+		switchCornerSize = 0
+end
+
+section: aliases
+end
+
+section: links
+	win:
+		right = osx
+	osx:
+		left = win
+end
+
+section: options
+	relativeMouseMoves = false
+	screenSaverSync = true
+	win32KeepForeground = false
+	switchCorners = none +top-left +bottom-left 
+	switchCornerSize = 32
+end
+```
+
+Create a file ~/bin/initsynergy.command with the following contents:
+```
+ #!/bin/bash
+ 
+ # Hides tray icon. set to 0 to have it show again.
+ defaults write /Applications/Synergy.app/Contents/Info LSUIElement 1
+ 
+ /Applications/Synergy.app/Contents/MacOS/synergys --enable-crypto --config ~/Library/Synergy/synergy.conf -n osx -l /var/log/synergy.log
+```
+
+Make sure you:
+```
+ sudo touch /var/log/synergy.log
+ sudo chown YOUROSXUSERNAME /var/log/synergy.log
+```
+
+Add ~/bin/initsynergy.command to your account's Login Items in System Preferences -> Accounts -> Login Items
+
+# Linux
+
+Start synergy client (synergyc) on Fedora 22 using LightDM
+
+Apply all command as root, from a command line TTY (text console or remote SSH)
+
+Install LightDM <pre>
+dnf install lightdm
+systemctl stop gdm
+systemctl disable gdm
+killall -u gdm
+systemctl enable lightdm
+systemctl start lightdm
+</pre>
+
+Create a start/stop script
+<pre>vi /etc/lightdm/syneryc-start.sh</pre><pre>
+#!/bin/sh
+# script to start/stop synergyc
+killall synergyc
+case $0 in *stop*) exit 0 ;; esac  # exit now if called 'stop'
+synergyc -n `hostname -s` -d INFO YOUR_SYNERGYS_SERVER_HOSTNAME
+exit 0
+</pre>
+Link as a stop script
+<pre>ln -s syneryc-start.sh /etc/lightdm/syneryc-stop.sh</pre>
+Tell lightdm to call scripts
+<pre>vi /etc/lightdm/lightdm.conf.d/synergy.conf</pre><pre>
+[SeatDefaults]
+greeter-setup-script=/etc/lightdm/syneryc-start.sh
+session-setup-script=/etc/lightdm/syneryc-stop.sh</pre>
+
+Remove that last line if the user does not want to start his own synergyc daemon.
+
+--------
+
+Originates from Bug #1755   -- This GDM method no longer works in Fedora 22 :-(
+
+Howto start synergy client (synergyc) at boot on FC11 (Fedora Core 11)
+
+This is not really a bug report - but just some hints how to successfuly install synergyc so that it start at boot in Fedora Core 11. 
+Please integrate this in the main help.
+
+<pre>
+/etc/gdm/Init/Default:
+# This script needs to start synergyc as user root - this synergyc runs on the
+# login screen. IMPORTANT: I've found that at boot time NAME LOOKUP does not
+# YET work so you MUST use the server's IP ADDRESS otherwise synergyc will
+# fail to connect and exit after a few seconds (--reconnect does not work):
+# so the BUG REPORT/enhancement request would be to make --reconnect work so
+# that it never/ever exits synergyc - even if name lookup does not work, or
+# if there is no display, etc.. As a (bad) alternative you can also use: 
+# (sleep 10; /usr/bin/synergyc YOUR_SERVER_HOSTNAME) &
+# NOTE: I've also found that sometimes you need to kill synergyc with -9
+/usr/bin/killall -9 synergyc 
+sleep 1 
+/usr/bin/synergyc YOUR_SERVER_IP
+
+/etc/gdm/PostLogin/Default:
+# this script needs to kill the root synergyc started by Init/Default
+/usr/bin/killall synergyc 
+sleep 1 
+
+/etc/gdm/Xsession:
+# this script will start the user synergyc - the one that runs after you have logged in 
+# Note: here you can also use your server's hostname, instead of the IP
+/usr/bin/killall synergyc # no need, I guess?
+sleep 1 
+/usr/bin/synergyc YOUR_SERVER_IP
+</pre>
+
+I took a different approach - wrote a script to start/stop synergyc. 
+
+I changed my scripts as follows:
+
+<pre>
+# end of file, before exit 0
+/etc/gdm/Init/Default:# SYNERGY BEGIN
+/etc/gdm/Init/Default:# start synergy as root user (login screen)
+/etc/gdm/Init/Default:/usr/local/bin/synergyc-ctl.sh start
+/etc/gdm/Init/Default:# SYNERGY END
+
+# top of file, after comments
+# For at least CentOS 6.2, this needs to be in /etc/gdm/PreSession/Default
+/etc/gdm/PostLogin/Default:# SYNERGY BEGIN
+/etc/gdm/PostLogin/Default:# stop root synergy (login screen)
+/etc/gdm/PostLogin/Default:/usr/local/bin/synergyc-ctl.sh stop
+/etc/gdm/PostLogin/Default:# SYNERGY END
+
+# top of file, after comments
+/etc/gdm/Xsession:# SYNERGY BEGIN
+/etc/gdm/Xsession:# start synergy as login user
+/etc/gdm/Xsession:/usr/local/bin/synergyc-ctl.sh start
+/etc/gdm/Xsession:# SYNERGY END
+</pre>
+
+Here's also /usr/local/bin/synergyc-ctl.sh:
+
+Here is an [https://raw.githubusercontent.com/mark-vdb/scripts/master/synergy/synergy-ctl.sh updated version of this script] which includes support for setting crypto, display, logs, screenname.
+
+<pre>
+#!/bin/sh
+OP=${1}
+
+# put the synergy server IP here (at boot time name lookup does not work
+# and synergyc will fail and exit, using the IP prevents the problem)
+SERVER_IP=192.168.1.10
+
+SYNERGYC=/usr/bin/synergyc
+PS=/bin/ps
+GREP=/bin/grep
+WC=/usr/bin/wc
+PIDOF=/sbin/pidof
+SLEEP=/bin/sleep
+
+# check synergyc is running
+function sc_check
+{
+  N=`${PS} -ef | ${GREP} "${SYNERGYC}"  | ${GREP} -v "${GREP}" | ${WC} -l`
+  return $N
+}
+
+# kill synergyc if running
+function sc_kill
+{
+  SIG=""
+  while true
+  do
+    sc_check
+    if [ $? -eq 1 ]
+    then
+      PIDS=`${PIDOF} "${SYNERGYC}"`
+      if [ ${PIDS} != "" ]
+      then
+        kill ${SIG} ${PIDS}
+      fi
+    else
+      break
+    fi
+
+    ${SLEEP} 1
+    SIG="-9"
+  done
+}
+
+# start synergyc
+function sc_start
+{
+  while true
+  do
+    ${SYNERGYC} "${SERVER_IP}"
+
+    ${SLEEP} 2
+
+    sc_check
+    if [ $? -eq 1 ]
+    then
+      break
+    fi
+  done
+}
+
+case "${OP}" in
+  start)
+    sc_kill
+    sc_start
+  ;;
+  stop)
+    sc_kill
+  ;;
+  *)
+    echo "usage: synergyc-ctl [start|stop]"
+    exit 1
+  ;;
+esac
+
+exit 0
+</pre>
+
+You can also simply put the command to start synergy as a daemon in ~/.xinitrc, though this won't give you the fine-grained control of a startup script.
+
+ synergys --daemon --restart --display :0 --address 10.137.10.163
+ 
+ tinywm

@@ -1,0 +1,178 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+== Perguntas Frequentes ==
+
+Esta página é útil para resolver problemas comuns ao usar o núcleo do Synergy (linha de comando e arquivos de configuração).
+
+Você provavelmente quer o [https://symless.com/synergy/help/faq FAQ do Synergy 2] amigável.
+
+== Recursos ==
+
+=== O servidor e o cliente podem estar usando sistemas operacionais diferentes? ===
+
+Sim. O protocolo de rede do Synergy é neutro em plataforma, então o Synergy não se importa quais sistemas operacionais estão rodando no servidor e nos clientes. Isso também se aplica entre SOs de 32-bit e 64-bit.
+
+=== O Synergy pode fazer arrastar e soltar arquivos entre computadores? ===
+
+Sim! Isso é suportado no Windows Vista e mais novos, e Mac OS X 10.7 e mais novos. Você deve arrastar um único ícone de arquivo até a borda da tela na direção do cliente ou servidor, e o arquivo será copiado para a área de trabalho do outro computador alguns segundos depois. Isso tem algumas limitações dependendo da versão do SSL e se o SSL está rodando, parcialmente corrigido para 1.7.3 e a ser muito melhorado para 1.7.4.
+
+=== O Synergy pode compartilhar a exibição além do mouse e teclado? ===
+
+Não. Synergy é uma solução KBM (Teclado, Mouse) não uma solução KVM (Teclado, Vídeo, Mouse). No entanto, versões futuras provavelmente suportarão KVM. Esperamos que isso torne o Synergy adequado para gerenciar grandes números de servidores headless.
+
+=== O Synergy faz arrastar e soltar de janelas? ===
+
+Não. Synergy atualmente não faz nada com vídeo ou elementos visuais. Este é um recurso frequentemente solicitado, então estamos sempre atentos a maneiras de realizar isso.
+
+=== Qual a diferença entre Synergy e x2x, x2vnc, etc? ===
+
+Diferente do x2x, o synergy suporta qualquer número de computadores e não requer X em plataformas Microsoft Windows. Ele também tem suporte mais avançado à área de transferência e sincroniza protetores de tela. x2vnc também é limitado a dois computadores, requer o pacote VNC separado, e é realmente apropriado apenas para usar um sistema X para controlar um sistema não-X. No entanto, a ferramenta certa para o trabalho é qualquer ferramenta que funcione melhor para você.
+
+=== Que segurança/criptografia o synergy fornece? ===
+
+Synergy usa criptografia SSL (disponível para usuários da edição Pro).
+
+Criptografia forte e autenticação também está disponível através de SSH (secure shell). Execute o daemon SSH (i.e. servidor) no mesmo computador em que você executa o servidor Synergy. Não requer configuração especial para suportar Synergy. Em cada sistema cliente Synergy, execute SSH com encaminhamento de porta:
+
+ ssh -f -N -L 24800:server-hostname:24800 server-hostname
+
+...onde ''server-hostname'' é o nome do servidor SSH/Synergy. Uma vez que o SSH se autentica, inicie o cliente Synergy normalmente, exceto use localhost ou 127.0.0.1 como endereço do servidor. O SSH então criptografará toda a comunicação em nome do (ou além do) Synergy.
+ Autenticação é tratada pela autenticação SSH.
+
+Uma implementação gratuita de SSH para Linux e muitos sistemas Unix é OpenSSH. Para Windows há um porte do OpenSSH usando Cygwin.
+
+=== O que é Bonjour e por que devo me importar? ===
+
+Bonjour é uma aplicação do protocolo ZeroConf, que foi originalmente projetado para coisas como impressoras e scanners serem automaticamente encontrados em uma rede quando um novo computador se conecta. Antigamente, você teria que cavar nas configurações da impressora ou imprimir uma etiqueta na frente da impressora para encontrar seu endereço IP e adicioná-lo manualmente. Este protocolo foi desenvolvido para tornar esse processo mais fácil. Ele também foi projetado para ser usado com qualquer coisa que precisasse que um cliente encontrasse um servidor, que é o caso do Synergy. Usamos ZeroConf (Bonjour) para permitir que Clientes Synergy encontrem automaticamente Servidores Synergy. Ainda não é perfeito, às vezes ainda escolhe o IP errado para conectar, caso em que você precisará desmarcar "auto config" e inserir o IP correto manualmente. Esperamos melhorar esse recurso em versões futuras até que seja uma daquelas coisas "não consigo viver sem".
+
+=== Por que o Synergy não foi portado para a plataforma XYZ? ===
+
+Provavelmente porque os desenvolvedores não têm acesso à plataforma XYZ e/ou não estão familiarizados com desenvolvimento em XYZ. Além disso, Synergy tem aspectos inerentemente não-portáveis então há um esforço não-insignificante envolvido no porte.
+
+== Configuração ==
+
+=== Todos os computadores precisam estar na mesma rede? ===
+
+O cliente consegue fazer ping no servidor? Se sim, então Synergy deve funcionar. O cliente consegue alcançar o servidor via SSH? Se sim, então Synergy deve funcionar usando métodos relacionados à criptografia SSH, descritos acima. Se o cliente não consegue conectar ao servidor nem diretamente nem através de um túnel, então você não poderá usar Synergy. Você pode ser capaz de usar VPN para conectar o cliente à mesma rede do servidor (se estiver em ambiente corporativo, pergunte ao seu administrador de sistema).
+
+=== Como devo chamar minhas telas na configuração? ===
+
+A resposta curta é que você deve usar o nome que o Synergy detecta automaticamente sempre que possível. Na GUI, isso aparece na seção Cliente, rotulado ''Screen Name''.
+
+Você pode usar qualquer nome único no arquivo de configuração para cada tela mas é mais fácil usar o hostname do computador. Esse é o nome do computador sem incluir o domínio. Por exemplo, um computador com o nome de domínio totalmente qualificado xyz.example.com tem o hostname xyz. Também deve haver um alias de xyz para xyz.example.com. Se você não usar o hostname do computador, tem que dizer ao Synergy o nome da tela usando uma opção de linha de comando, ou o diálogo de inicialização no Windows.
+
+Alguns sistemas são configurados para reportar o nome de domínio totalmente qualificado como hostname. Para esses sistemas será mais fácil usar o FQDN como nome da tela. Note também que um sistema Mac OS X chamado xyz pode reportar seu hostname como xyz.local. Se for seu caso, use xyz.local como nome da tela.
+
+=== Como paro meu jogo de minimizar quando saio da tela? ===
+
+Muitas aplicações em tela cheia, particularmente jogos, minimizam automaticamente quando não são mais a aplicação ativa (foreground) no Microsoft Windows. O servidor Synergy normalmente se torna o foreground quando você muda para outra tela para capturar de forma mais confiável toda a entrada do usuário fazendo esses jogos minimizarem. Para evitar que o Synergy roube o foreground, na GUI do Synergy clique ''Configure Server'' --> ''Advanced Server Options'' e marque ''Don't take foreground window on Windows servers.'' Se você ativar isso, esteja ciente de que o Synergy pode não funcionar corretamente quando certos programas, particularmente o prompt de comando, são o foreground quando você muda para outras telas. Simplesmente torne um programa diferente o foreground antes de trocar para contornar isso.
+
+=== Por que Ctrl+Alt+Del não funciona em telas secundárias? ===
+
+Fonte: [http://www.robertwrose.com/2012/06/enabling-ctrl-alt-del-in-windows-7-over-synergy.html Habilitando CTRL-ALT-DEL no Windows 7 via Synergy]
+
+Usando uma máquina Windows Vista ou mais nova como cliente: Com as configurações padrão do Windows você não pode inserir um Ctrl+Alt+Del SAS (Secure Attention Sequence) via Synergy na tela de bloqueio do Windows. Isso pode ser frustrante se você trava seu computador frequentemente ou faz login remotamente.
+
+Você pode permitir esse comportamento permitindo que ''Services'' emita o SAS nas ''Windows Logon Options''. Estas são encontradas no ''Local Group Policy Editor''.
+
+# Vá ao Local Group Policy Editor (Digite ''gpedit.msc'' no menu executar)
+#  Navegue até ''Computer Configuration'' --> ''Administrative Templates'' --> Windows Components --> ''Windows Logon Options''
+#  Abra a opção ''Disable or enable software Secure Attention Sequence''
+#  Defina como ''Enabled'' e então selecione ''Services and Ease of Access applications'' abaixo, clique ''OK''
+
+Você agora deve ser capaz de emitir um Ctrl+Alt+Del para o Windows via Synergy enquanto na tela de bloqueio. Nota: Às vezes as teclas Ctrl e Alt grudam, apenas pressione cada uma uma vez para desgrudar.
+
+Em servidores Windows, Ctrl+Alt+Del é sempre interceptado pelo Windows e nunca é passado para o Synergy. Implementamos Ctrl+Alt+Pause/Break como solução alternativa, que enviará uma sequência Ctrl+Alt+Del para o cliente. Note que o cursor ainda deve ser movido para o sistema cliente para isso funcionar.
+
+Em laptops Mac, a tecla rotulada ''Delete'' é na verdade backspace e Ctrl+Cmd+Del não funcionará. No entanto Fn+Delete realmente é Delete então Fn+Ctrl+Cmd+Delete agirá como Ctrl+Alt+Del em uma tela secundária Windows.
+
+=== Por que minhas teclas ''Caps Lock'', ''Num-Lock'' e ''Scroll Lock'' agem de forma estranha? ===
+
+Alguns sistemas tratam as teclas ''Caps Lock'', ''Num-Lock'' e ''Scroll Lock'' de forma diferente de todas as outras. Enquanto a maioria das teclas reporta pressionada quando fisicamente pressionada e solta quando fisicamente liberada, nesses sistemas as teclas Caps Lock e Num Lock reportam pressionada quando ativadas e solta quando desativadas. Ou seja, quando você pressiona e solta, digamos, Caps Lock para ativá-lo, ele só reporta pressionada, e quando você pressiona e solta para desativá-lo, só reporta solta. Isso confunde o Synergy.
+
+Há opções para corrigir isso nas configurações da GUI. Ou, se você usar um arquivo de configuração, na seção ''screens'', seguindo cada tela que tem o problema, qualquer ou todas estas linhas conforme apropriado:
+
+ halfDuplexCapsLock = true
+
+ halfDuplexNumLock = true
+
+ halfDuplexScrollLock = true
+
+Então reinicie o Synergy no servidor ou recarregue a configuração.
+
+=== ''AltGr/Mode-Switch/ISO\_Level3\_Shift'' funciona? ===
+
+Synergy suporta o botão ''AltGr'', mas não no mesmo nível que outras teclas modificadoras mais comuns. Há um bug em versões mais recentes que quebra isso para alguns usuários; planejamos investigar assim que tivermos chance. Patches considerados com atenção.
+
+=== O protetor de tela nunca inicia. Por que não? ===
+
+Diferentes plataformas têm causas diferentes. Linux: O protetor de tela não iniciará enquanto o mouse estiver em uma tela cliente. Isso é consequência de como X Windows, Synergy e xscreensaver funcionam. Windows/Mac: Isso pode resultar de um bug no recurso ''Screen Saver Sync''. Não acontece com todos, mas desative esse recurso (''Configure Server'' --> ''Advanced Server Options'') e reinicie para corrigir.
+
+== Obtendo Ajuda ==
+
+=== Como posso enviar meu conteúdo de log do Synergy? ===
+
+É fácil nos enviar seu conteúdo de log para que possamos ajudar a debugar um problema. Primeiro, aumente o nível de logging (para a maioria dos casos) para pelo menos ''Debug''. Na GUI do Synergy, vá em ''Edit'' -> ''Settings'' (no Windows/Linux) ou ''Synergy'' -> ''Preferences'' (no Mac). Encontre a opção rotulada ''Logging level:'', escolha ''Debug'' e clique ''OK''. Então, clique ''Apply''.
+
+Na área de saída ''Log'', você pode ''Select All'' destacar o conteúdo do log para copiar todo o log. No entanto, para a maioria da solução de problemas o conteúdo de log que precisamos são apenas as linhas do período do problema (desconexão do Synergy, falha ao copiar da área de transferência remota...). Você pode colar seus resultados no [http://pastebin.com/ Pastebin] e nos enviar o link, ou se forem apenas algumas dezenas de linhas ou menos simplesmente copie o conteúdo em seu email, mensagem no Google Group ou post no fórum.
+
+== Erros ==
+
+=== Meu cliente não consegue conectar. O que há de errado? ===
+
+Geralmente quando o cliente não consegue conectar, ele lhe dará um motivo. Alguns comuns são coisas como ''Connection timed out'' ou ''Connection refused''. Algumas coisas para verificar são se o IP correto do Servidor foi inserido (desmarque ''auto config'' se precisar sobrescrever) e se há um firewall no caminho. Também certifique-se de que o servidor Synergy está rodando e não dando mensagens de erro sérias.
+
+=== Por que meu teclado não funciona no cliente? ===
+
+Isso assume que o mouse funciona no cliente. Isso acontece mais frequentemente no Mac OSX. Há uma opção para ''Secure Keyboard Entry'' que parece ser colocada em efeito quer o usuário selecione ou não. Se você executa SecureAnywhere, ele também faz isso. Abra o app Terminal, e então abra o menu Terminal. Você verá a opção listada aqui. Se estiver marcada, desmarque-a. Se estiver desmarcada, marque-a e então desmarque novamente.
+
+Outra possibilidade é que o Synergy não está encontrando o layout correto do teclado no cliente. Neste caso, definir o nível de logging no cliente para "Debug1" pode mostrar mensagens "can't find keyboard layout". Se isso acontecer com um cliente Windows, vá ao Painel de Controle, procure por "Change Keyboards", e verifique quais teclados estão listados como serviços de idioma de entrada. Você pode precisar adicionar um layout, como o layout "US" para inglês.
+
+=== O que significa ''Cannot initialize hook library''? ===
+
+Este erro pode ocorrer em um servidor Synergy rodando em um sistema operacional Microsoft Windows. Significa que o Synergy já está rodando ou possivelmente não foi encerrado corretamente. Se estiver rodando então primeiro encerre a tarefa Synergy. Se não estiver então tente fazer logoff e logon novamente ou reiniciar e então iniciar o Synergy novamente.
+
+=== Recebo o erro ''Xlib: No protocol specified''. Por quê? ===
+
+Você está executando o Synergy sem autorização para conectar ao display X. Tipicamente o motivo é executar o Synergy como root quando logado como não-root. Apenas execute o Synergy como o mesmo usuário que está logado.
+
+=== Link falha no Solaris. O que há de errado? ===
+
+Você adicionou
+
+ --x-includes=/usr/openwin/include --x-libraries=/usr/openwin/lib
+
+...à linha de comando do configure? Solaris coloca os includes X11 e bibliotecas em um lugar incomum e o acima permite que o Synergy os encontre.
+
+=== Não consigo mais trocar de tela sem motivo aparente. Por quê? ===
+
+Verifique se seu Scroll Lock não está ativado. Também verifique se seus ícones de tela na grade Configure Server compartilham uma borda.
+
+=== O cursor vai para a tela secundária mas não volta. Por quê? ===
+
+Verifique o status da sua tecla ''Scroll Lock''. Se esta tecla estiver ativada, o Synergy não trocará de tela.
+
+Há um bug envolvendo Windows 8/10 e telas de alta resolução. Quando usa ''Desktop Display Scaling'', o Synergy não consegue mais ler a posição do mouse corretamente, e o cursor acaba preso no canto inferior direito do cliente (e invisível por algum motivo). Você pode dizer se este é seu caso clicando com botão direito e vendo onde o menu aparece. Veja [https://github.com/symless/synergy-core/issues/4041 issue #4041].
+
+Se você escreveu seu arquivo de configuração do zero, deve indicar os vizinhos de cada tela. Só porque você configurou ''Apple'' para estar à esquerda de ''Orange'' não significa que ''Orange'' está à direita de ''Apple''. Você deve fornecer ambos na configuração.
+
+=== O cursor envolve de uma borda da tela para a oposta. Por quê? ===
+
+Verifique novamente seu arranjo de telas na grade. Na GUI do Synergy clique ''Configure Server'' e certifique-se de que as telas estão arranjadas da mesma forma que estão configuradas em sua mesa.
+
+Se estiver usando um arquivo de configuração, verifique seus links para garantir que apontam para a tela pretendida. Se você listar ''Orange'' para estar à esquerda de ''Orange'' então mover o mouse para fora da borda esquerda de ''Orange'' fará ele pular para a borda direita. Remova a linha ofensiva da configuração se não quiser esse comportamento.
+
+=== Cursor preso no canto inferior da máquina no windows ===
+
+Em máquinas Windows com telas HiDPI, o Synergy funciona mal. Para corrigir, mude o modo de compatibilidade para synergys.exe e synergyc.exe para ''Deactivate scaling for hiDPI'' e ''run as Windows 7'' para ''All Users''. Mais informação pode ser encontrada em [https://github.com/symless/synergy-core/issues/4041 issue #4041].
+
+=== Atualizei para Fedora 25 e o Synergy não funciona mais? ===
+
+Isso é porque o Fedora 25 mudou para usar Wayland por padrão em vez do servidor Xorg.
+Você pode reativar o Xorg como solução temporária editando ''/etc/gdm/custom.conf'' e mudando a linha 5 conforme linha 4.
+
+Você então precisará reiniciar. Isso faz a máquina voltar a usar Xorg para o gerenciador de sessão.
+
+ [daemon] 
+ # Descomente a linha abaixo para forçar a tela de login a usar Xorg 
+ WaylandEnable=false

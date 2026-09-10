@@ -1,0 +1,527 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+==Usando Arquivos de Configuração de Texto==
+
+Lidar diretamente com arquivos de configuração baseados em texto pode ser evitado usando a GUI. No entanto, se você quiser executar o OpenFlowKey pela [[linha de comando]], precisará escrever seu próprio arquivo de configuração.
+
+Quando um arquivo de configuração baseado em texto é necessário, você pode especificá-lo na linha de comando usando a opção <code>--config</code>. Exemplo:
+
+<pre>
+ openflowkey-core --config /caminho/para/openflowkey-server.conf
+</pre>
+
+O OpenFlowKey também verifica certos caminhos para carregar o arquivo de configuração se você não especificar um caminho usando <code>--config</code>. Executar <code>openflowkey-core --help</code> informa esses caminhos.
+
+Se você precisar acessar um recurso que não está disponível na GUI, mas já tem tudo funcionando, pode obter um bom ponto de partida exportando sua configuração pela GUI usando a opção ''Arquivo'' --> ''Salvar Configuração Como...''.
+
+A principal razão é que você não tem escolha. Se não estiver usando uma GUI, terá que usar um arquivo de configuração baseado em texto.
+
+A segunda razão é que oferece mais controle. A GUI não consegue criar configurações avançadas como conexões não recíprocas. Um exemplo de conexão não recíproca seria: se você for para a direita a partir da tela A chega à tela B, mas ao ir para a esquerda a partir da tela B você chega à tela C em vez de voltar para a tela A, como seria em uma conexão recíproca.
+
+Outras considerações:
+* Você pode usar um sistema de controle de versão
+* É mais fácil compartilhar configurações com outras pessoas
+* Você pode ter múltiplos arquivos de configuração (como se usar um laptop em vários lugares)
+
+==Formato do Arquivo==
+
+O arquivo de configuração é um arquivo de texto puro. Use qualquer editor de texto para criá-lo. O arquivo é dividido em seções e cada seção tem a forma:
+
+<pre>
+ section: ''nome''
+ 	''args''
+ end
+</pre>
+
+Comentários são introduzidos por ''#'' e continuam até o fim da linha. ''nome'' deve ser um dos seguintes:
+
+* ''screens''
+* ''aliases''
+* ''links''
+* ''options''
+
+Veja abaixo mais explicação sobre cada tipo de seção. O arquivo de configuração diferencia maiúsculas de minúsculas, então <code>Section</code>, <code>SECTION</code> e <code>section</code> são todos diferentes e apenas o último é válido. Nomes de telas são a exceção, eles não diferenciam maiúsculas de minúsculas.
+
+O arquivo é analisado de cima para baixo e nomes não podem ser usados antes de terem sido definidos nas seções <code>screens</code> ou <code>aliases</code>. Portanto, <code>links</code> e <code>aliases</code> devem aparecer após <code>screens</code> e <code>links</code> não pode referir-se a aliases a menos que <code>aliases</code> apareça antes de <code>links</code>.
+
+===screens===
+
+''args'' é uma lista de nomes de telas, um nome por linha, cada um seguido por dois pontos. Nomes são strings arbitrárias, mas devem ser únicos. Recomenda-se o hostname de cada computador. (Este é o nome de rede do computador no win32 e o nome reportado pelo programa hostname no Unix e OS X. Note que o OS X pode anexar .local ao nome que você deu ao computador; ex. somehost.local.) Deve haver um nome de tela para o servidor e cada cliente. Cada tela pode especificar várias opções. Opções têm a forma nome = valor e são listadas uma por linha após o nome da tela.
+
+<pre>
+ section: screens
+     moe:
+     larry:
+         halfDuplexCapsLock = true
+         halfDuplexNumLock = true
+     curly:
+         meta = alt
+  end
+</pre>
+
+Isso declara três telas chamadas ''moe'', ''larry'' e ''curly''. A tela ''larry'' tem teclas ''Caps Lock'' e ''Num Lock'' half-duplex (veja abaixo) e a tela ''curly'' converte a tecla modificadora ''Meta'' para a tecla modificadora ''Alt''.
+
+====opções de tela====
+
+Uma tela pode ter as seguintes opções:
+
+* <code>halfDuplexCapsLock = {true|false}</code>
+: Este computador tem uma tecla ''Caps Lock'' que não reporta evento de pressionar e soltar quando o usuário a pressiona, mas reporta um evento de pressionar quando é ligada e um evento de soltar quando é desligada. Se ''Caps Lock'' se comportar estranhamente em todas as telas, pode ser necessário definir esta opção como true na tela do servidor. Se agir estranhamente em uma tela, essa tela pode precisar da opção como true.
+
+* <code>halfDuplexNumLock = {true|false}</code>
+: Idêntico a <code>halfDuplexCapsLock</code>, exceto que se aplica à tecla ''Num Lock''.
+
+* <code>halfDuplexScrollLock = {true|false}</code>
+: Idêntico a <code>halfDuplexCapsLock</code>, exceto que se aplica à tecla ''Scroll Lock''. Note que, por padrão, o OpenFlowKey usa ''Scroll Lock'' para manter o cursor na tela atual. Ou seja, quando ''Scroll Lock'' está ativado, o cursor fica travado na tela onde está. Você pode usar isso para evitar troca acidental. Também pode configurar outras hotkeys para isso; veja lockCursorToScreen.
+
+* <code>switchCorners = <corners></code>
+: Veja <a href="#options">switchCorners</a> abaixo.
+
+* <code>switchCornerSize = N</code>
+: Veja switchCornerSize abaixo.
+
+* <code>xtestIsXineramaUnaware = {true|false}</code>
+: Esta opção contorna um bug na extensão XTest quando usada em combinação com Xinerama. Afeta apenas clientes X11. Nem todas as versões da extensão XTest reconhecem a extensão Xinerama. Como resultado, elas não movem o mouse corretamente ao usar múltiplas telas Xinerama. Esta opção atualmente é ''true'' por padrão. Se você sabe que sua extensão XTest reconhece Xinerama, defina como ''false''.
+
+* <code>shift = {shift|ctrl|alt|meta|super|none}</code>
+* <code>ctrl = {shift|ctrl|alt|meta|super|none}</code>
+* <code>alt = {shift|ctrl|alt|meta|super|none}</code>
+* <code>meta = {shift|ctrl|alt|meta|super|none}</code>
+* <code>super = {shift|ctrl|alt|meta|super|none}</code>
+: Mapeia uma tecla modificadora pressionada no teclado do servidor para um modificador diferente neste cliente. Esta opção só afeta telas clientes; é aceita e ignorada na tela do servidor.
+: Por exemplo, você pode mapear a tecla ''Shift'' para ''Shift'' (padrão), ''Ctrl'', ''Alt'', ''Meta'', ''Super'' ou nada. Normalmente, você não remapearia ''Shift'' ou ''Ctrl''. No entanto, você pode ter um servidor X11 com ''Meta'' vinculado às teclas ''Alt''. Para usar este servidor efetivamente com um cliente Windows, que não usa ''Meta'' mas usa ''Alt'' extensivamente, você vai querer que o cliente Windows mapeie ''Meta'' para ''Alt'' (usando <code>meta = alt</code>).
+
+===aliases===
+
+''args'' é uma lista de nomes de telas como na seção ''screens'', exceto que cada tela é seguida por uma lista de aliases, um por linha, sem dois pontos. Um ''alias'' é um nome de tela e deve ser único. Durante a busca por nome de tela, cada alias é equivalente ao nome da tela que ele apelida. Assim, um cliente pode conectar usando seu nome canônico ou qualquer um de seus aliases.
+
+<pre>
+ section: aliases
+     larry:
+         larry.stooges.com
+     curly:
+         shemp
+ end
+</pre>
+
+A tela ''larry'' também é conhecida como ''larry.stooges.com'' e pode conectar como qualquer um dos nomes. A tela ''curly'' também é conhecida como ''shemp'' (é só um exemplo).
+
+===links===
+
+''args'' é uma lista de nomes de telas como na seção ''screens'', exceto que cada tela é seguida por uma lista de links, uma por linha. Cada link tem a forma:
+<pre>
+ {left|right|up|down}[<range>] = name[<range>]
+</pre>
+
+Um link indica qual tela é adjacente na direção dada.
+
+Cada lado de um link pode especificar um intervalo (range) que define uma porção de uma borda. Um range na direção é a porção da borda de onde você pode sair, enquanto um range na tela é a porção da borda onde você entrará. Ranges são opcionais e por padrão correspondem à borda inteira. Todos os ranges em uma direção específica de uma tela não devem se sobrepor.
+
+Um ''range'' é escrito como <code>(<start>,<end>)</code>. Tanto ''start'' quanto ''end'' são porcentagens de 0 a 100, inclusive. O início deve ser menor que o fim. 0 é a esquerda ou topo de uma borda e 100 é a direita ou base.
+
+<pre>
+ section: links
+     moe:
+         right        = larry
+         up(50,100)   = curly(0,50)
+     larry:
+         left         = moe
+         up(0,50)     = curly(50,100)
+     curly:
+         down(0,50)   = moe
+         down(50,100) = larry(0,50)
+ end
+</pre>
+
+Isso indica que a tela ''larry'' está à direita de ''moe'' (então mover o cursor para fora da borda direita de ''moe'' o faria aparecer na borda esquerda de ''larry''), a metade esquerda de curly está acima da metade direita de ''moe'', ''moe'' está à esquerda de ''larry'' (bordas não são necessariamente simétricas, então é preciso fornecer ambas as direções), a metade direita de curly está acima da metade esquerda de ''larry'', todo ''moe'' está abaixo da metade esquerda de ''curly'', e a metade esquerda de ''larry'' está abaixo da metade direita de ''curly''.
+
+Note que links não precisam ser simétricos; por exemplo, aqui a borda entre ''moe'' e ''curly'' mapeia para ranges diferentes dependendo se você vai para cima ou para baixo. Na verdade, links não precisam ser bidirecionais. Você pode configurar a direita de ''moe'' para ir para ''larry'' sem um link da esquerda de ''larry'' para ''moe''. É possível configurar uma tela sem links de saída; o cursor ficará preso nessa tela a menos que você tenha uma hotkey configurada para sair dela.
+
+===options===
+
+''args'' é uma lista de linhas no formato <code>name = value</code>. Elas definem as opções globais.
+
+<pre>
+ section: options
+     protocol = barrier
+     heartbeat = 5000
+     switchDelay = 500
+ end
+</pre>
+
+====Lista de opções====
+
+* <code>protocol = [barrier|synergy]</code>
+: O protocolo a usar ao cumprimentar clientes. Pode ser barrier ou synergy. Se não definido, barrier é usado por padrão. Movido para [[General Settings|https://github.com/openflowkey/openflowkey/wiki/GUI-Settings#server]] no openflowkey 1.26.0.156
+
+* <code>heartbeat = N</code>
+: O servidor esperará que cada cliente envie uma mensagem pelo menos a cada ''N'' milissegundos. Se nenhuma mensagem chegar de um cliente em ''3N'' segundos, o servidor força a desconexão desse cliente.
+: Se o OpenFlowKey falhar em detectar clientes desconectando enquanto o servidor está dormindo ou vice-versa, tente usar esta opção.
+
+* <code>switchCorners = <corners></code>
+: O OpenFlowKey não trocará de tela quando o mouse atingir a borda se estiver em um canto listado. O tamanho de todos os cantos é dado pela opção <code>switchCornerSize</code>.
+: Cantos são especificados por uma lista usando os seguintes nomes:
+:* <code>none</code> -- nenhum canto
+:* <code>top-left</code> -- canto superior esquerdo
+:* <code>top-right</code> -- canto superior direito
+:* <code>bottom-left</code> -- canto inferior esquerdo
+:* <code>bottom-right</code> -- canto inferior direito
+:* <code>left</code> -- cantos esquerdo superior e inferior
+:* <code>right</code> -- cantos direito superior e inferior
+:* <code>top</code> -- cantos superiores esquerdo e direito
+:* <code>bottom</code> -- cantos inferiores esquerdo e direito
+:* <code>all</code> -- todos os cantos
+: O primeiro nome na lista é um dos nomes acima e define o conjunto inicial de cantos. Nomes subsequentes são prefixados com + ou - para adicionar ou remover o canto do conjunto, respectivamente. Por exemplo: <code>all -left +top-left</code> começa com todos os cantos, remove os cantos esquerdos (superior e inferior) e adiciona o superior esquerdo de volta, resultando nos cantos superior esquerdo, inferior esquerdo e inferior direito.
+
+* <code>switchCornerSize = N</code>
+: Define o tamanho de todos os cantos em pixels. O cursor deve estar a ''N'' pixels do canto para ser considerado dentro dele.
+
+* <code>switchDelay = N</code>
+: O OpenFlowKey não trocará de tela quando o mouse atingir a borda a menos que permaneça na borda por ''N'' milissegundos. Isso ajuda a evitar trocas não intencionais ao trabalhar perto da borda.
+
+* <code>switchDoubleTap = N</code>
+: O OpenFlowKey não trocará de tela quando o mouse atingir a borda a menos que seja afastado da borda e depois retornado dentro de ''N'' milissegundos. Com esta opção você precisa tocar rapidamente a borda duas vezes para trocar. Isso ajuda a evitar trocas não intencionais.
+
+* <code>screenSaverSync = {true|false}</code>
+: ''Nota: Removido na v1.14.1''
+: Se definido como ''false'', o OpenFlowKey não sincronizará protetores de tela. Protetores de tela dos clientes iniciarão conforme suas configurações individuais. O protetor de tela do servidor não iniciará se houver entrada, mesmo que seja direcionada a uma tela cliente.
+
+* <code>relativeMouseMoves = {true|false}</code>
+: Se definido como ''true'', telas secundárias movem o mouse usando movimentos relativos em vez de absolutos quando e somente quando o cursor está travado na tela (por ''Scroll Lock'' ou hotkey configurada). Destina-se a fazer o OpenFlowKey funcionar melhor com certos jogos. Se ''false'' ou não definido, todos os movimentos são absolutos.
+
+* <code>clipboardSharing = {true|false}</code>
+: Se ''true'', o compartilhamento de área de transferência será habilitado e a configuração ''clipboardSharingSize'' será usada. Se false, o compartilhamento será desabilitado.
+
+* <code>clipboardSharingSize = N</code>
+: O OpenFlowKey enviará no máximo ''N'' kilobytes de dados da área de transferência para outro computador quando o mouse transitar para ele.
+
+* <code>win32KeepForeground = {true|false}</code>
+: Se ''true'' (padrão), o OpenFlowKey capturará o foco de primeiro plano em um servidor Windows (colocando todas as outras janelas em segundo plano) ao trocar para um cliente. Se ''false'', deixará a janela em primeiro plano como está. O OpenFlowKey captura o foco para evitar que outros apps interfiram na leitura das entradas de hardware.
+
+* <code>keystroke(key) = actions</code>
+: Vincula a combinação ''key'' às ''actions'' dadas. ''key'' é uma lista opcional de modificadores (''shift'', ''control'', ''alt'', ''meta'' ou ''super'') opcionalmente seguida por um caractere ou nome de tecla, separados por + (sinais de mais). Você deve ter modificadores ou caractere/nome de tecla ou ambos. Veja abaixo [[nomes de teclas válidos|https://github.com/openflowkey/openflowkey/wiki/Server-Text-Config#keynames]] e [[ações|https://github.com/openflowkey/openflowkey/wiki/Server-Text-Config#actions]].
+: Hotkeys de teclado são tratadas enquanto o cursor está na tela primária e secundárias. Ações separadas podem ser atribuídas ao pressionar e soltar.
+
+* <code>mousebutton(button) = actions</code>
+: Vincula a combinação de modificador e botão ''button'' às ''actions'' dadas. ''button'' é uma lista opcional de modificadores (''shift'', ''control'', ''alt'', ''meta'' ou ''super'') seguida por um número de botão. O botão primário (esquerdo para destros) é botão 1, o do meio é 2, etc. Ações podem ser [[encontradas abaixo|https://github.com/openflowkey/openflowkey/wiki/Server-Text-Config#actions]]
+: Ações de botão do mouse não são tratadas enquanto o cursor está na tela primária. Você não pode usá-las para executar uma ação na tela primária. Ações separadas podem ser atribuídas ao pressionar e soltar.
+
+Você pode usar ambas as opções ''switchDelay'' e ''switchDoubleTap'' ao mesmo tempo. O OpenFlowKey trocará quando qualquer requisito for satisfeito.
+
+====Ações====
+
+Ações são duas listas de ações individuais separadas por vírgulas. As duas listas são separadas por '';'' (ponto e vírgula). Qualquer lista pode estar vazia e se a segunda estiver vazia o ponto e vírgula é opcional. A primeira lista lista ações a tomar quando a condição se torna verdadeira (ex. hotkey ou botão pressionado) e a segunda lista ações quando a condição se torna falsa (ex. hotkey ou botão solto). Tornar-se verdadeiro é chamado ativação e tornar-se falso é desativação. Ações individuais permitidas são:
+
+* <code>keystroke(key[,screens])</code>
+
+* <code>keyDown(key[,screens])</code>
+
+* <code>keyUp(key[,screens])</code>
+
+
+: Sintetiza os modificadores e tecla dados em ''key'' que tem a mesma forma descrita na opção ''keystroke''. Se fornecido, ''screens'' lista a(s) tela(s) para direcionar o evento, independentemente da tela ativa. Se não fornecido, o evento é direcionado apenas à tela ativa.
+: ''keyDown'' sintetiza pressionar tecla e ''keyUp'' sintetiza soltar. ''keystroke'' sintetiza pressionar na ativação e soltar na desativação, equivalente a ''keyDown'' na ativação e ''keyUp'' na desativação.
+: ''screens'' é ''*'' (asterisco) para todas as telas ou uma lista separada por '':'' (dois pontos) de nomes de tela.
+
+* <code>mousebutton(button)</code>
+* <code>mouseDown(button)</code>
+* <code>mouseUp(button)</code>
+: Sintetiza os modificadores e botão dados em ''button'' que tem a mesma forma descrita na opção ''mousebutton''.
+: ''mouseDown'' sintetiza pressionar e ''mouseUp'' sintetiza soltar. ''mousebutton'' sintetiza pressionar na ativação e soltar na desativação.
+
+* <code>lockCursorToScreen(mode)</code>
+: Trava o cursor na tela ativa ou destrava. ''mode'' pode ser ''off'' para destravar, ''on'' para travar, ou ''toggle'' para alternar. O padrão é ''toggle''. Se a configuração não tiver ação ''lockCursorToScreen'' e ''Scroll Lock'' não for usado como hotkey, então ''Scroll Lock'' alterna o travamento.
+
+* <code>switchToScreen(screen)</code>
+: Pula para a tela com nome ou alias ''screen''.
+
+* <code>switchInDirection(dir)</code>
+: Troca para a tela na direção ''dir'', que pode ser ''left'', ''right'', ''up'' ou ''down''.
+
+====Keynames====
+Nomes de teclas válidos são:
+
+{|
+|
+* AppMail
+* AppMedia
+* AppUser1
+* AppUser2
+* AudioDown
+* AudioMute
+* AudioNext
+* AudioPlay
+* AudioPrev
+* AudioStop
+* AudioUp
+* BackSpace
+* Begin
+* Break
+* Cancel
+* CapsLock
+* Clear
+* Delete
+* Down
+* Eject
+* End
+* Escape
+* Execute
+* F1
+* F2
+* F3
+|
+* F4
+* F5
+* F6
+* F7
+* F8
+* F9
+* F10
+* F11
+* F12
+* F13
+* F14
+* F15
+* F16
+* F17
+* F18
+* F19
+* F20
+* F21
+* F22
+* F23
+* F24
+* F25
+* F26
+* F27
+* F28
+* F29
+|
+* F30
+* F31
+* F32
+* F33
+* F34
+* F35
+* Find
+* Help
+* Home
+* Insert
+* KP_0
+* KP_1
+* KP_2
+* KP_3
+* KP_4
+* KP_5
+* KP_6
+* KP_7
+* KP_8
+* KP_9
+* KP_Add
+* KP_Begin
+* KP_Decimal
+* KP_Delete
+* KP_Divide
+* KP_Down
+|
+* KP_End
+* KP_Enter
+* KP_Equal
+* KP_F1
+* KP_F2
+* KP_F3
+* KP_F4
+* KP_Home
+* KP_Insert
+* KP_Left
+* KP_Multiply
+* KP_PageDown
+* KP_PageUp
+* KP_Right
+* KP_Separator
+* KP_Space
+* KP_Subtract
+* KP_Tab
+* KP_Up
+* Left
+* LeftTab
+* Linefeed
+* Menu
+* NumLock
+* PageDown
+* PageUp
+|
+* Pause
+* Print
+* Redo
+* Return
+* Right
+* ScrollLock
+* Select
+* Sleep
+* Space
+* SysReq
+* Tab
+* Undo
+* Up
+* WWWBack
+* WWWFavorites
+* WWWForward
+* WWWHome
+* WWWRefresh
+* WWWSearch
+* WWWStop
+* Space
+* Exclaim
+* DoubleQuote
+* Number
+* Dollar
+* Percent
+|
+* Ampersand
+* Apostrophe
+* ParenthesisL
+* ParenthesisR
+* Asterisk
+* Plus
+* Comma
+* Minus
+* Period
+* Slash
+* Colon
+* Semicolon
+* Less
+* Equal
+* Greater
+* Question
+* At
+* BracketL
+* Backslash
+* BracketR
+* Circumflex
+* Underscore
+* Grave
+* BraceL
+* Bar
+* BraceR
+* Tilde
+|}
+
+Além disso, um nome na forma <code>\uXXXX</code> onde ''XXXX'' é um número hexadecimal é interpretado como código de caractere unicode. Nomes de teclas e modificadores não diferenciam maiúsculas. Teclas que não existem no teclado ou no layout padrão não funcionarão.
+
+==Exemplo de arquivo de configuração textual==
+
+Este exemplo vem de doc/openflowkey-basic.conf
+
+<pre>
+ # sample openflowkey configuration file
+ #
+ # comments begin with the # character and continue to the end of
+ # line.  comments may appear anywhere the syntax permits.
+ # +-------+  +--------+ +---------+
+ # |Laptop |  |Desktop1| |iMac     |
+ # |       |  |        | |         |
+ # +-------+  +--------+ +---------+
+
+ section: screens
+ 	# three hosts named:  Laptop, Desktop1, and iMac
+ 	# These are the nice names of the hosts to make it easy to write the config file
+ 	# The aliases section below contain the "actual" names of the hosts (their hostnames)
+ 	Laptop:
+ 	Desktop1:
+ 	iMac:
+ end
+ 
+ section: links
+ 	# iMac is to the right of Desktop1
+ 	# Laptop is to the left of Desktop1
+ 	Desktop1:
+ 		right(0,100) = iMac # the numbers in parentheses indicate the percentage of the screen's edge to be considered active for switching)
+ 		left  = Laptop
+ 		shift = shift (shift, alt, super, meta can be mapped to any of the others)
+
+ 	# Desktop1 is to the right of Laptop
+ 	Laptop:
+ 		right = Desktop1
+
+ 	# Desktop1 is to the left of iMac
+ 	iMac:
+ 		left  = Desktop1
+ end
+ 
+ section: aliases
+ 	# The "real" name of iMac is John-Smiths-iMac-3.local. 
+ 	# If we wanted we could remove this alias and instead use John-Smiths-iMac-3.local everywhere iMac is above. 
+ 	# Hopefully it should be easy to see why using an alias is nicer
+ 	iMac:
+ 		John-Smiths-iMac-3.local
+ end
+</pre>
+
+==Opções disponíveis==
+
+===Preservação de Foco===
+
+A seção seguinte pode ser adicionada à seção screens da configuração (como mostrado) para permitir que janelas mantenham o foco ao trocar de tela. Isso sobrescreve a opção padrão de fazer janelas perderem foco ao trocar de máquina.
+
+<pre>
+ section: screens
+ 	client1:
+ 		preserveFocus = true # Don't drop focus when switching screens
+ 		
+ end
+</pre><pre>
+ section: screens
+ 	client1:
+ 		preserveFocus = true # Don't drop focus when switching screens
+ 		
+ end
+</pre>
+
+===Envolvimento do Cursor===
+
+A configuração de texto permite que telas sejam envolvidas (wrap around). Por exemplo, com duas máquinas (servidor e cliente), o mouse pode sair pela direita do servidor para a esquerda do cliente, depois sair pela direita do cliente de volta para a esquerda do servidor. Esta configuração também usa ''Ctrl''+''Super''+(''seta esquerda''/''seta direita'') para trocar de máquina ao pressionar tecla.
+
+<pre>
+ # Physical monitor arrangement, with machine names as used by OpenFlowKey.
+ #  +----------+----------+
+ #  | syn-serv | syn-cli  |
+ #  |          |          |
+ #  +----------+----------+ 
+ 
+ section: screens
+     syn-serv:
+     syn-cli:
+ end
+ section: links
+     syn-serv:
+         left = syn-cli     # "wrapping" arrangement
+         right = syn-cli    # "normal" arrangement
+     syn-cli:
+         left = syn-serv    # "normal"
+         right = syn-serv   # "wrapping"
+ end
+ section: options
+         keystroke(control+super+right) = switchInDirection(right) # Switch screens on keypress 
+         keystroke(control+super+left) = switchInDirection(left)
+ end
+</pre>
+
+===Tecla AltGr===
+
+A configuração de tela a seguir permite o mapeamento de ''Alt'' para ''AltGr''. Embora possa não funcionar, veja [https://github.com/openflowkey/openflowkey-core/issues/4411 bug #4411].
+<pre>
+ section: screens
+ 	  client1:
+   		altgr = alt          # mapping to fix AltGr key not working on windows clients (e.g. @-Symbol etc.).
+   		                     # See reference [1]
+ end
+</pre>
+
+Veja também: a página man para ''openflowkey-core''.
+
+<span id="1">[1]</span> [https://github.com/symless/synergy-core/issues/4411 OpenFlowKey Issue Tracker Bug #4411 - AltGr not sent to client from server]
+
+==Dicas/Notas==
+
+A GUI na verdade cria uma configuração baseada em texto nos bastidores.

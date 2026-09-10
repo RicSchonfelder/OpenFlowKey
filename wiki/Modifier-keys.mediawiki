@@ -1,0 +1,89 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+Esta página reúne notas e observações sobre como as teclas modificadoras funcionam no Synergy.
+
+== Máscara recv indefinida ==
+
+Este comportamento é da r1560 (v1.4.10).
+
+A máscara recebida no cliente difere entre as plataformas servidoras. A tecla Num Lock está desligada neste cenário (por isso 0x2000 não está na máscara), então o único bit na máscara de modificadores é 0x0001 (a tecla Shift). No entanto, se está ligado ou desligado no key up ou key down difere em cada plataforma servidora (embora Mac e Windows pareçam ser iguais, se não os mais similares). O segundo resultado (cliente mac) é exatamente o mesmo do primeiro resultado (cliente Windows), já que o servidor é o mesmo.
+
+No Windows, a máscara se aplica apenas ao pressionar a tecla Shift esquerda. No Linux, apenas no key up, tanto esquerda quanto direita. No Mac, apenas no key down, tanto esquerda quanto direita. Embora indefinido, não é necessariamente um bug que o bit modificador Shift não esteja definido quando o código da tecla Shift é enviado.
+
+No entanto, <strike>há</strike> havia um bug na r1560 no servidor Windows onde o Shift direito não afeta a máscara quando outra tecla é enviada (veja o próximo trecho).
+
+<pre>
+windows server, linux client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0001, button=0x002a
+    recv key up id=0x0000efe1, mask=0x0000, button=0x002a
+
+  right
+    recv key down id=0x0000efe2, mask=0x0000, button=0x0036
+    recv key up id=0x0000efe2, mask=0x0000, button=0x0036
+
+windows server, mac client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0001, button=0x002a
+    recv key up id=0x0000efe1, mask=0x0000, button=0x002a
+
+  right
+    recv key down id=0x0000efe2, mask=0x0000, button=0x0036
+    recv key up id=0x0000efe2, mask=0x0000, button=0x0036
+
+linux server, windows client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0000, button=0x0032
+    recv key up id=0x0000efe1, mask=0x0001, button=0x0032
+
+  right
+    recv key down id=0x0000efe2, mask=0x0000, button=0x003e
+    recv key up id=0x0000efe2, mask=0x0001, button=0x003e
+
+    
+mac server, windows client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0001, button=0x0039
+    recv key up id=0x0000efe1, mask=0x0000, button=0x0039
+
+  right (note id is for left)
+    recv key down id=0x0000efe1, mask=0x0001, button=0x0039
+    recv key up id=0x0000efe1, mask=0x0000, button=0x0039
+</pre>
+
+Corrigido [http://synergy-foss.org/spit/issues/details/2799/ bug #2799]: Ao pressionar uma tecla com as teclas Shift, ocorre um comportamento similar, mas este é um bug no Windows, já que a tecla de caractere "a" (0x00000041) não é enviada com o bit Shift definido na máscara de modificadores (Shift esquerdo funciona corretamente).
+
+<pre>
+windows server, mac client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0001, button=0x002a
+    recv key down id=0x00000041, mask=0x0001, button=0x001e
+    recv key up id=0x00000041, mask=0x0001, button=0x001e
+    recv key up id=0x0000efe1, mask=0x0000, button=0x002a
+    
+  right (bug - no shift bit in mask)
+    recv key down id=0x0000efe2, mask=0x0000, button=0x0036
+    recv key down id=0x00000041, mask=0x0000, button=0x001e
+    recv key up id=0x00000041, mask=0x0000, button=0x001e
+    recv key up id=0x0000efe2, mask=0x0000, button=0x0036
+
+linux server, mac client:
+
+  left
+    recv key down id=0x0000efe1, mask=0x0000, button=0x0032
+    recv key down id=0x00000041, mask=0x0001, button=0x0026
+    recv key up id=0x00000041, mask=0x0001, button=0x0026
+    recv key up id=0x0000efe1, mask=0x0001, button=0x0032
+
+  right
+    recv key down id=0x0000efe1, mask=0x0000, button=0x0032
+    recv key down id=0x00000041, mask=0x0001, button=0x0026
+    recv key up id=0x00000041, mask=0x0001, button=0x0026
+    recv key up id=0x0000efe1, mask=0x0001, button=0x0032
+
+</pre>

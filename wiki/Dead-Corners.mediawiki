@@ -1,0 +1,18 @@
+> Nota: idioma oficial do OpenFlowKey é português do Brasil.
+
+Cantos Mortos (Dead Corners) é um recurso do OpenFlowKey que afeta as áreas da borda da tela onde o OpenFlowKey fará o cursor do mouse mudar para a outra tela. A ideia geral é que quando você tem uma janela de aplicativo (por exemplo, um navegador) aberta em uma tela e leva o mouse rapidamente até o canto para clicar no X da janela, não queremos que ele troque de tela ali. Então, configuramos um Canto Morto para que o mouse permaneça na tela atual e permita que você clique no X sem precisar mirar com precisão.
+
+Isso é encontrado no botão Configurar Servidor (Configure Server), nas opções individuais de tela (clique duas vezes no ícone da tela para a qual deseja configurar os Cantos Mortos). Você pode habilitar qualquer um dos 4 cantos da tela para ficar inativo ou "morto"
+
+Certifique-se de configurar um Tamanho de Canto (Corner Size) para definir o tamanho de todos os cantos, medido em pixels. O cursor deve estar dentro de N pixels do canto para ser considerado dentro do canto.
+
+A configuração padrão para Tamanho de Canto é 0 pixels, o que basicamente desativa completamente a configuração de Canto Morto. Portanto, para que os Cantos fiquem Mortos, o tamanho do canto precisará ter pelo menos 1 pixel para os dois lados do canto que ficará Morto. Estar no canto da tela é funcionalmente impossível já que o tamanho do cursor na tela é no mínimo 1 pixel logicamente, e talvez 4 pixels ou mais visualmente. Embora você possa definir o tamanho do canto como 0 ou 1 pixel, na maioria das configurações que usam esse recurso, você notará que 4 pixels é aproximadamente o limiar para que os Cantos Mortos realmente sejam perceptíveis e impeçam a troca de tela.
+
+Exemplo de uso prático:
+Para tamanho de canto seria se você está tentando evitar a troca de tela caso o usuário passe do botão "Voltar" no canto superior esquerdo de uma janela de navegador em tela cheia, para um monitor médio de entrada rodando em resolução 1366x768px, o Tamanho do Canto Morto para um canto Superior Esquerdo selecionado precisaria ser em torno de 38 pixels. Ou seja, para trocar de tela seu cursor precisaria estar em qualquer lugar entre a borda inferior esquerda e a borda superior esquerda menos 38 pixels, que é aproximadamente o tamanho de uma barra de título média e dos elementos de interface do botão "Voltar" para aquela resolução.
+
+Nota: O limiar inferior provavelmente precisará ser de pelo menos 6-8 pixels ou mais para os seguintes ambientes:
+
+- Telas Hi-DPI / de Resolução Extremamente Alta ("Telas Retina") como as encontradas em produtos Apple de geração atual, incluindo MacBook Pros, Thunderbolt Displays, iMac, iPhone, iPad, etc.)
+   - Como exemplo, para um tamanho de tela de 2560x1600 pixels, para evitar a troca de tela ao ultrapassar acidentalmente o botão voltar na maioria dos navegadores, o Tamanho do Canto Morto precisaria ser de pelo menos 80 pixels.
+- Tamanho de Texto Ampliado e/ou tamanho do Cursor quando as configurações de exibição de Acessibilidade estão definidas para qualquer valor acima de 105% de escala.
