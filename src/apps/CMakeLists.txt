@@ -12,10 +12,14 @@ endif()
 
 function(generate_app_man TARGET NAME)
   if(HELP2MAN)
+    # Escapa parênteses para o /bin/sh: o gerador do Ninja escapa espaços,
+    # mas não escapa "(...)", o que quebra o help2man com nomes como "(PT-BR)".
+    string(REPLACE "(" "\\(" NAME_SHELL "${NAME}")
+    string(REPLACE ")" "\\)" NAME_SHELL "${NAME_SHELL}")
     add_custom_command(
       TARGET ${target} POST_BUILD
         COMMAND QT_QPA_PLATFORM=minimal PATH=$<TARGET_FILE_DIR:${target}>:${PATH} ${HELP2MAN}
-          --name ${NAME}
+          --name ${NAME_SHELL}
           --include ${CMAKE_SOURCE_DIR}/src/apps/res/manpage.txt
           --no-info
           ${target}
