@@ -15,6 +15,7 @@ add_custom_target(docs ALL
     HelpMain.md
     Configuration.md
     Issues.md
+    Troubleshooting-Keyboard-Layout.md
 )
 
 install(
@@ -24,6 +25,7 @@ install(
     Configuration.md
     Issues.md
     Security.md
+    Troubleshooting-Keyboard-Layout.md
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
 )
 
