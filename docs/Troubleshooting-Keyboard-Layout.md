@@ -84,7 +84,7 @@ Autostart no login — `~/.config/autostart/ofk-keymap.desktop`:
 Type=Application
 Name=OpenFlowKey: layout do teclado (core/XTEST)
 Comment=Garante teclas mortas (acentos, c, ~) no mapa X usado pelo cliente
-Exec=sh -c 'sleep 5; exec %h/.local/bin/ofk-keymap.sh'
+Exec=sh -c 'sleep 5; exec "$HOME/.local/bin/ofk-keymap.sh"'
 Terminal=false
 X-GNOME-Autostart-enabled=true
 ```
